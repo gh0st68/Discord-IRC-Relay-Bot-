@@ -14,8 +14,9 @@ Welcome to the **Twisted Discord to IRC Relay Bot** by gh0st! This bot relays me
   - [1. Setting Up Discord Bot Token](#1-setting-up-discord-bot-token)
   - [2. Setting Up Discord Webhooks](#2-setting-up-discord-webhooks)
   - [3. Configuring IRC and Discord Settings in Code](#3-configuring-irc-and-discord-settings-in-code)
-  - [4. Running the Bot](#4-running-the-bot)
-  - [5. Running the Bot in a Screen Session](#5-running-the-bot-in-a-screen-session)
+  - [4. Whitelisting Your Server's IP on the IRC Server](#4-whitelisting-your-servers-ip-on-the-irc-server)
+  - [5. Running the Bot](#5-running-the-bot)
+  - [6. Running the Bot in a Screen Session](#6-running-the-bot-in-a-screen-session)
 - [Usage](#usage)
 - [Contributing](#contributing)
 - [Support](#support)
@@ -30,6 +31,7 @@ The **Twisted Discord to IRC Relay Bot** by gh0st is designed to bridge communic
 - **Two-way message relay** between Discord and IRC.
 - **Replicates Discord users** onto IRC as virtual users.
 - **Secure IRC connection** using SSL for enhanced security.
+- **User inactivity timeout** to disconnect spawned users from IRC after a period of inactivity, customizable to fit your needs.
 
 ## Requirements
 
@@ -49,8 +51,8 @@ pip3 install discord.py irc requests
 
 1. Clone this repository:
    ```bash
-   git clone https://github.com/yourusername/Twisted-Discord-IRC-Relay-Bot.git
-   cd Twisted-Discord-IRC-Relay-Bot
+   git clone https://github.com/gh0st68/Discord-IRC-Relay-Bot-.git
+   cd Discord-IRC-Relay-Bot-
    ```
 
 ## Configuration
@@ -72,26 +74,19 @@ Webhooks are used to relay messages from IRC to Discord:
 
 ### 3. Configuring IRC and Discord Settings in Code
 
-You need to update the code directly with your bot token, webhook URL, IRC settings, and timeout settings:
+You need to update the code directly with your Discord channel ID, bot token, webhook URL, IRC settings, and inactivity timeout settings:
 
-1. Open the bot code (`bot.py`) in your preferred text editor.
-2. Replace the placeholder values with your actual settings:
-
-Example:
+Example configuration:
 ```python
-DISCORD_TOKEN = 'your-discord-bot-token'
-WEBHOOK_URL = 'your-discord-webhook-url'
+DISCORD_CHANNEL_ID = 123456789012345678  # Replace with your Discord channel ID
+DISCORD_TOKEN = 'YOUR_DISCORD_TOKEN_HERE'  # Replace with your Discord bot token
+DISCORD_WEBHOOK_URL = 'YOUR_DISCORD_WEBHOOK_URL_HERE'  # Replace with your Discord webhook URL
 
-IRC_SERVER = 'irc.twistednet.org'
-IRC_PORT = 6697  # SSL Port
-IRC_CHANNEL = '#twisted'
-IRC_NICKNAME = 'TwistedBot'
-
-TIMEOUT = 30  # Timeout setting in seconds for network operations
-USE_SSL = True  # Ensure SSL is enabled for secure connection
+IRC_NICKNAME = "DiscordRelay"  # IRC bot's nickname
+INACTIVITY_TIMEOUT = 1800  # Timeout in seconds for inactivity (set to 0 to disable)
 ```
 
-The `TIMEOUT` setting controls how long the bot waits for a response before timing out. Adjust this value based on your network conditions. Make sure to connect to the IRC server using SSL for enhanced security.
+Ensure that all settings reflect your specific server and channel configurations. The `INACTIVITY_TIMEOUT` setting controls how long the bot waits before disconnecting spawned users from IRC due to inactivity. Adjust this value based on your needs.
 
 ### 4. Whitelisting Your Server's IP on the IRC Server
 
