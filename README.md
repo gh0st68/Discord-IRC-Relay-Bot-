@@ -1,6 +1,6 @@
 # Twisted Discord to IRC Relay Bot by gh0st
 
-Welcome to the **Twisted Discord to IRC Relay Bot** by gh0st! This bot relays messages between Discord and IRC channels, allowing seamless communication across platforms. Visit us at [irc.twistednet.org](irc.twistednet.org), channels `#dev` and `#twisted`, for support and more information.
+Welcome to the **Twisted Discord to IRC Relay Bot** by gh0st! This bot seamlessly relays messages between Discord and IRC channels, spawning and replicating Discord users onto IRC as virtual users. This allows for unified communication across platforms. Visit us at [irc.twistednet.org](irc.twistednet.org), channels `#dev` and `#twisted`, for support and more information.
 
 <img src="https://raw.githubusercontent.com/gh0st68/Discord-IRC-Relay-Bot-/main/DiscordIRCRelay.webp" alt="Twisted Discord to IRC Relay Bot" width="400">
 
