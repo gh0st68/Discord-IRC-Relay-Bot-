@@ -243,10 +243,10 @@ class DiscordToIrcBot(discord.Client):
         if message.author == self.user:
             return
 
-        if message.channel.id != DISCORD_CHANNEL_ID:  # Ensure message is from the correct Discord channel
+        if message.channel.id != DISCORD_CHANNEL_ID:  
             return
 
-        if "(IRC)" in message.author.name:  # Ignore messages from IRC users relayed to Discord
+        if "(IRC)" in message.author.name:  
             return
 
         irc_nickname = sanitize_nickname(f"{message.author.name}[d]")
