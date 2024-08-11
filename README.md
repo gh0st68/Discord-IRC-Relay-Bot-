@@ -95,13 +95,12 @@ Ensure that all settings reflect your specific server and channel configurations
 To ensure the bot functions correctly, you need to enable the following intents in the Discord Developer Portal:
 
 - **Presence Intent**: Required for your bot to receive Presence Update events.  
-  **NOTE**: Once your bot reaches 100 or more servers, this will require verification and approval. [Read more here](https://discord.com/developers/docs/topics/gateway#presence-update).
+
 
 - **Server Members Intent**: Required for your bot to receive events listed under GUILD_MEMBERS.  
-  **NOTE**: Once your bot reaches 100 or more servers, this will require verification and approval. [Read more here](https://discord.com/developers/docs/topics/gateway#guild-members).
+
 
 - **Message Content Intent**: Required for your bot to receive message content in most messages.  
-  **NOTE**: Once your bot reaches 100 or more servers, this will require verification and approval. [Read more here](https://discord.com/developers/docs/topics/gateway#message-create).
 
 ### 5. Whitelisting Your Server's IP on the IRC Server
 
