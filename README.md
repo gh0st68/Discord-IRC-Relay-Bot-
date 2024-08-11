@@ -14,9 +14,10 @@ Welcome to the **Twisted Discord to IRC Relay Bot** by gh0st! This bot seamlessl
   - [1. Setting Up Discord Bot Token](#1-setting-up-discord-bot-token)
   - [2. Setting Up Discord Webhooks](#2-setting-up-discord-webhooks)
   - [3. Configuring IRC and Discord Settings in Code](#3-configuring-irc-and-discord-settings-in-code)
-  - [4. Whitelisting Your Server's IP on the IRC Server](#4-whitelisting-your-servers-ip-on-the-irc-server)
-  - [5. Running the Bot](#5-running-the-bot)
-  - [6. Running the Bot in a Screen Session](#6-running-the-bot-in-a-screen-session)
+  - [4. Enabling Necessary Intents on Discord](#4-enabling-necessary-intents-on-discord)
+  - [5. Whitelisting Your Server's IP on the IRC Server](#5-whitelisting-your-servers-ip-on-the-irc-server)
+  - [6. Running the Bot](#6-running-the-bot)
+  - [7. Running the Bot in a Screen Session](#7-running-the-bot-in-a-screen-session)
 - [Usage](#usage)
 - [Contributing](#contributing)
 - [Support](#support)
@@ -89,11 +90,24 @@ INACTIVITY_TIMEOUT = 1800  # Timeout in seconds for inactivity (set to 0 to disa
 
 Ensure that all settings reflect your specific server and channel configurations. The `INACTIVITY_TIMEOUT` setting controls how long the bot waits before disconnecting spawned users from IRC due to inactivity. Adjust this value based on your needs.
 
-### 4. Whitelisting Your Server's IP on the IRC Server
+### 4. Enabling Necessary Intents on Discord
+
+To ensure the bot functions correctly, you need to enable the following intents in the Discord Developer Portal:
+
+- **Presence Intent**: Required for your bot to receive Presence Update events.  
+  **NOTE**: Once your bot reaches 100 or more servers, this will require verification and approval. [Read more here](https://discord.com/developers/docs/topics/gateway#presence-update).
+
+- **Server Members Intent**: Required for your bot to receive events listed under GUILD_MEMBERS.  
+  **NOTE**: Once your bot reaches 100 or more servers, this will require verification and approval. [Read more here](https://discord.com/developers/docs/topics/gateway#guild-members).
+
+- **Message Content Intent**: Required for your bot to receive message content in most messages.  
+  **NOTE**: Once your bot reaches 100 or more servers, this will require verification and approval. [Read more here](https://discord.com/developers/docs/topics/gateway#message-create).
+
+### 5. Whitelisting Your Server's IP on the IRC Server
 
 Because this bot will spawn multiple virtual users on the IRC server, it's important to whitelist the IP address of the server running this script. This will help avoid any connection issues or rate limits that might be imposed by the IRC server.
 
-### 5. Running the Bot
+### 6. Running the Bot
 
 Run the bot using the following command:
 
@@ -101,7 +115,7 @@ Run the bot using the following command:
 python3 DiscordRelay1.0.py
 ```
 
-### 6. Running the Bot in a Screen Session
+### 7. Running the Bot in a Screen Session
 
 To keep the bot running even after closing the console, you can use `screen`:
 
@@ -112,7 +126,7 @@ To keep the bot running even after closing the console, you can use `screen`:
 
 2. Run the bot within the screen session:
    ```bash
-   python3 bot.py
+   python3 DiscordRelay1.0.py
    ```
 
 3. Detach from the screen session without stopping the bot:
