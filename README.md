@@ -29,9 +29,6 @@ The **Twisted Discord to IRC Relay Bot** by gh0st is designed to bridge communic
 
 - **Two-way message relay** between Discord and IRC.
 - **Replicates Discord users** onto IRC as virtual users.
-- **Customizable** message format.
-- **Support for multiple Discord channels** relaying to different IRC channels.
-- **Error handling and rate limiting** for stability.
 
 ## Requirements
 
