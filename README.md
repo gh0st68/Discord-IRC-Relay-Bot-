@@ -29,6 +29,7 @@ The **Twisted Discord to IRC Relay Bot** by gh0st is designed to bridge communic
 
 - **Two-way message relay** between Discord and IRC.
 - **Replicates Discord users** onto IRC as virtual users.
+- **Secure IRC connection** using SSL for enhanced security.
 
 ## Requirements
 
@@ -82,16 +83,21 @@ DISCORD_TOKEN = 'your-discord-bot-token'
 WEBHOOK_URL = 'your-discord-webhook-url'
 
 IRC_SERVER = 'irc.twistednet.org'
-IRC_PORT = 6667
+IRC_PORT = 6697  # SSL Port
 IRC_CHANNEL = '#twisted'
 IRC_NICKNAME = 'TwistedBot'
 
 TIMEOUT = 30  # Timeout setting in seconds for network operations
+USE_SSL = True  # Ensure SSL is enabled for secure connection
 ```
 
-The `TIMEOUT` setting controls how long the bot waits for a response before timing out. Adjust this value based on your network conditions.
+The `TIMEOUT` setting controls how long the bot waits for a response before timing out. Adjust this value based on your network conditions. Make sure to connect to the IRC server using SSL for enhanced security.
 
-### 4. Running the Bot
+### 4. Whitelisting Your Server's IP on the IRC Server
+
+Because this bot will spawn multiple virtual users on the IRC server, it's important to whitelist the IP address of the server running this script. This will help avoid any connection issues or rate limits that might be imposed by the IRC server.
+
+### 5. Running the Bot
 
 Run the bot using the following command:
 
@@ -99,7 +105,7 @@ Run the bot using the following command:
 python3 bot.py
 ```
 
-### 5. Running the Bot in a Screen Session
+### 6. Running the Bot in a Screen Session
 
 To keep the bot running even after closing the console, you can use `screen`:
 
