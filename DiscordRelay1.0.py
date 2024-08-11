@@ -192,7 +192,7 @@ class IrcClientManager:
 
     async def disconnect_inactive_users(self):
         while True:
-            await asyncio.sleep(60)  # Check every 60 seconds
+            await asyncio.sleep(60)  
             if INACTIVITY_TIMEOUT == 0:
                 continue
 
