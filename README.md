@@ -98,7 +98,7 @@ Because this bot will spawn multiple virtual users on the IRC server, it's impor
 Run the bot using the following command:
 
 ```bash
-python3 bot.py
+python3 DiscordRelay1.0.py
 ```
 
 ### 6. Running the Bot in a Screen Session
