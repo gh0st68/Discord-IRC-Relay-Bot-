@@ -16,17 +16,15 @@ from queue import Queue
 from threading import Lock
 from datetime import datetime, timedelta
 
-# Configuration Options
-SERVER = "irc.twistednet.org"  # IRC server details
-CHANNEL = "#Twisted"  # IRC channel to join
-PORT = 6697  # IRC port (usually 6697 for SSL)
-
-DISCORD_CHANNEL_ID = 123456789012345678  # Replace with your Discord channel ID
-DISCORD_TOKEN = 'YOUR_DISCORD_TOKEN_HERE'  # Replace with your Discord bot token
-DISCORD_WEBHOOK_URL = 'YOUR_DISCORD_WEBHOOK_URL_HERE'  # Replace with your Discord webhook URL
-IRC_NICKNAME = "DiscordRelay"  # IRC bot's nickname
-INACTIVITY_TIMEOUT = 1800  # Timeout in seconds for inactivity (set to 0 to disable)
-
+# TODO: Replace with actual values
+SERVER = "irc.twistednet.org"
+CHANNEL = "#dev"
+PORT = 6697
+DISCORD_CHANNEL_ID = 0000000000000000000
+DISCORD_TOKEN = 'YOUR_DISCORD_TOKEN_HERE'
+DISCORD_WEBHOOK_URL = 'YOUR_DISCORD_WEBHOOK_URL_HERE'
+IRC_NICKNAME = "ExampleBot"
+INACTIVITY_TIMEOUT = 11800  # TODO: Adjust timeout as needed - 0 for disable
 
 logging.basicConfig(level=logging.DEBUG,
                     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
@@ -40,7 +38,7 @@ def sanitize_nickname(nickname):
     return sanitized_nickname[:15]
 
 class IrcClientManager:
-    def __init__(self, server, channel, port):
+    def __init__(self, server, channel, port, discord_bot):
         self.server = server
         self.channel = channel
         self.port = port
@@ -52,12 +50,16 @@ class IrcClientManager:
         self.irc.add_global_handler("action", self.on_action)
         self.irc.add_global_handler("ctcp", self.on_ctcp)
         self.last_activity = {}
+        self.discord_bot = discord_bot
+        logging.info("IRC Client Manager initialized.")
 
     def get_or_create_client(self, nickname):
         with self.relayed_messages_lock:
             if nickname in self.clients:
+                logging.info(f"Reusing IRC client for nickname: {nickname}")
                 return self.clients[nickname]['connection']
             else:
+                logging.info(f"Creating new IRC client for nickname: {nickname}")
                 ssl_context = ssl.create_default_context()
                 ssl_context.check_hostname = False
                 ssl_context.verify_mode = ssl.CERT_NONE
@@ -79,12 +81,14 @@ class IrcClientManager:
     def on_disconnect(self, connection, event):
         nickname = connection.get_nickname()
         if nickname == IRC_NICKNAME:
+            logging.warning("Main IRC bot disconnected from server. Attempting to reconnect...")
             attempt = 0
             while True:
                 attempt += 1
                 try:
                     time.sleep(min(2 ** attempt, 60))
                     connection.reconnect()
+                    logging.info("Reconnection attempt successful.")
                     break
                 except Exception as e:
                     logging.error(f"Failed to reconnect to IRC: {str(e)}")
@@ -92,12 +96,14 @@ class IrcClientManager:
             logging.info(f"Replicated user {nickname} disconnected.")
 
     def on_welcome(self, connection, event):
+        logging.info(f"Connected to IRC channel {self.channel}")
         connection.join(self.channel)
 
     def on_ctcp(self, connection, event):
         if event.arguments[0] == "VERSION":
             nickname = event.source.nick
-            version_reply = "Twisted Discord Relay Bot by gh0st. Visit IRC.TWISTEDNET.ORG Channel #Dev & #Twisted"
+            version_reply = "Example Discord Relay Bot"
+            logging.info(f"Received CTCP VERSION request from {nickname}. Responding with version info.")
             connection.ctcp_reply(nickname, f"VERSION {version_reply}")
 
     def on_pubmsg(self, connection, event):
@@ -108,17 +114,25 @@ class IrcClientManager:
         self.update_last_activity(nickname)
 
         if nickname.endswith("[d]"):
+            logging.debug(f"Ignored message from Discord user via IRC: {nickname}")
             return
 
         with sent_discord_lock:
             if message_id in sent_discord_messages:
+                logging.debug(f"Ignored message from {nickname} as it was sent from Discord: {message}")
                 return
 
         if nickname != IRC_NICKNAME:
+            logging.info(f"Received message on IRC from {nickname}: {message}")
+
             with self.relayed_messages_lock:
                 if message_id not in self.relayed_messages:
                     self.relayed_messages.add(message_id)
-                    asyncio.run_coroutine_threadsafe(self.relay_to_discord(nickname, message), discord_bot_instance.loop)
+                    asyncio.run_coroutine_threadsafe(self.relay_to_discord(nickname, message), self.discord_bot.loop)
+                else:
+                    logging.debug(f"Ignored message from {nickname} as it has already been relayed to Discord: {message}")
+        else:
+            logging.debug(f"Ignored message from bot's own nickname: {message}")
 
     def on_action(self, connection, event):
         nickname = event.source.nick
@@ -130,9 +144,15 @@ class IrcClientManager:
         with self.relayed_messages_lock:
             if message_id not in self.relayed_messages:
                 self.relayed_messages.add(message_id)
-                asyncio.run_coroutine_threadsafe(self.relay_to_discord(nickname, message, is_action=True), discord_bot_instance.loop)
+                asyncio.run_coroutine_threadsafe(self.relay_to_discord(nickname, message, is_action=True), self.discord_bot.loop)
+            else:
+                logging.debug(f"Ignored action from {nickname} as it has already been relayed to Discord: {message}")
 
     async def relay_to_discord(self, nickname, message, is_action=False):
+        if not self.discord_bot.is_ready.is_set():
+            logging.warning("Discord bot is not ready. Queueing message for later.")
+            return
+
         try:
             async with aiohttp.ClientSession() as session:
                 webhook = Webhook.from_url(DISCORD_WEBHOOK_URL, session=session)
@@ -140,18 +160,14 @@ class IrcClientManager:
                     content = f"*{message}*"
                 else:
                     content = message
-                response = await webhook.send(content=content, username=f"{nickname} (IRC)", avatar_url=None, wait=True)
-        except aiohttp.ClientResponseError as e:
-            logging.error(f"Failed to relay {'action' if is_action else 'message'} to Discord: HTTP Error {e.status}: {e.message}")
-        except aiohttp.ClientConnectionError as e:
-            logging.error(f"Failed to relay {'action' if is_action else 'message'} to Discord: Connection Error: {str(e)}")
+                await webhook.send(content=content, username=f"{nickname} (IRC)", avatar_url=None, wait=True)
+                logging.info(f"{'Action' if is_action else 'Message'} successfully relayed to Discord: {message}")
         except Exception as e:
-            logging.error(f"Failed to relay {'action' if is_action else 'message'} to Discord: Unexpected Error: {str(e)}")
-            await asyncio.sleep(5)
-            await self.relay_to_discord(nickname, message, is_action)
+            logging.error(f"Failed to relay {'action' if is_action else 'message'} to Discord: {str(e)}")
 
     def on_join(self, connection, event):
         nickname = event.source.nick
+        logging.info(f"{nickname} joined IRC channel {self.channel}")
 
         self.update_last_activity(nickname)
 
@@ -159,6 +175,7 @@ class IrcClientManager:
             self.clients[nickname]["joined"] = True
 
         if nickname in self.message_queues:
+            logging.info(f"Sending queued messages for {nickname} to IRC")
             for message in self.message_queues[nickname]:
                 self.send_message(nickname, message, force_send=True)
             del self.message_queues[nickname]
@@ -173,7 +190,9 @@ class IrcClientManager:
             client = self.get_or_create_client(nickname)
             if client and (self.clients[nickname]["joined"] or force_send):
                 client.privmsg(self.channel, message_part)
+                logging.info(f"Relayed message part from {nickname} to IRC: {message_part}")
             else:
+                logging.info(f"Queuing message part for {nickname} because they have not joined yet: {message_part}")
                 self.queue_message(nickname, message_part)
         except Exception as e:
             logging.error(f"Failed to send message part from {nickname} to IRC: {str(e)}")
@@ -186,13 +205,14 @@ class IrcClientManager:
                 logging.warning(f"Message queue for {nickname} is full. Dropping message: {message}")
             else:
                 self.message_queues[nickname].append(message)
+                logging.info(f"Queued message for {nickname}: {message}")
 
     def update_last_activity(self, nickname):
         self.last_activity[nickname] = datetime.now()
 
     async def disconnect_inactive_users(self):
         while True:
-            await asyncio.sleep(60)  
+            await asyncio.sleep(60)
             if INACTIVITY_TIMEOUT == 0:
                 continue
 
@@ -203,16 +223,19 @@ class IrcClientManager:
                         continue
 
                     if (now - last_active).total_seconds() > INACTIVITY_TIMEOUT:
+                        logging.info(f"Disconnecting {nickname} due to inactivity.")
                         self.disconnect_client(nickname)
 
     def disconnect_client(self, nickname):
         if nickname in self.clients:
             connection = self.clients[nickname]['connection']
+            logging.info(f"Disconnecting IRC client {nickname}")
             connection.disconnect("Inactivity timeout")
             del self.clients[nickname]
             del self.last_activity[nickname]
 
     def process_forever(self):
+        logging.info("Starting IRC processing loop...")
         try:
             while True:
                 try:
@@ -234,24 +257,47 @@ class DiscordToIrcBot(discord.Client):
         intents.message_content = True
         super().__init__(intents=intents)
         self.irc_manager = irc_manager
+        self.is_ready = asyncio.Event()
 
     async def on_ready(self):
+        logging.info(f'Connected to Discord as {self.user.name}')
         await self.change_presence(activity=discord.Game(name="Relaying messages"))
-        asyncio.create_task(self.irc_manager.disconnect_inactive_users())
+        self.is_ready.set()
+
+        self.bg_task = self.loop.create_task(self.irc_manager.disconnect_inactive_users())
+
+    async def on_disconnect(self):
+        logging.warning("Disconnected from Discord. Attempting to reconnect...")
+        self.is_ready.clear()
+        await self.wait_for_reconnect()
+
+    async def wait_for_reconnect(self):
+        while not self.is_closed():
+            try:
+                await self.connect(reconnect=True)
+                await self.is_ready.wait()
+                logging.info("Reconnected to Discord successfully.")
+                break
+            except Exception as e:
+                logging.error(f"Failed to reconnect: {e}")
+                await asyncio.sleep(5)
 
     async def on_message(self, message):
         if message.author == self.user:
             return
 
-        if message.channel.id != DISCORD_CHANNEL_ID:  
+        if message.channel.id != DISCORD_CHANNEL_ID:
+            logging.debug(f"Ignoring message from a different Discord channel: {message.channel.id}")
             return
 
-        if "(IRC)" in message.author.name:  
+        if "(IRC)" in message.author.name:
+            logging.debug(f"Ignoring message from IRC user via Discord: {message.author.name}")
             return
 
         irc_nickname = sanitize_nickname(f"{message.author.name}[d]")
         irc_message = message.content
         message_id = hash((irc_nickname, irc_message))
+        logging.info(f"Received message from Discord user {message.author.name} in channel {message.channel.id}: {irc_message}")
 
         with sent_discord_lock:
             sent_discord_messages.add(message_id)
@@ -263,7 +309,19 @@ class DiscordToIrcBot(discord.Client):
 
     async def close(self):
         logging.info("Shutting down Discord bot...")
+        if hasattr(self, 'bg_task'):
+            self.bg_task.cancel()
         await super().close()
+
+    def run_with_retry(self, token):
+        while True:
+            try:
+                super().run(token)
+            except Exception as e:
+                logging.error(f"Discord bot crashed: {e}")
+                time.sleep(5)
+            else:
+                break
 
 def graceful_shutdown(signum, frame):
     logging.info("Received termination signal. Shutting down...")
@@ -276,11 +334,11 @@ def graceful_shutdown(signum, frame):
 def main():
     logging.info("Starting IRC Client Manager...")
     global irc_manager
-    irc_manager = IrcClientManager(SERVER, CHANNEL, PORT)
-
-    logging.info("Starting Discord bot...")
     global discord_bot_instance
-    discord_bot_instance = DiscordToIrcBot(irc_manager)
+
+    discord_bot_instance = DiscordToIrcBot(None)
+    irc_manager = IrcClientManager(SERVER, CHANNEL, PORT, discord_bot_instance)
+    discord_bot_instance.irc_manager = irc_manager
 
     signal.signal(signal.SIGINT, graceful_shutdown)
     signal.signal(signal.SIGTERM, graceful_shutdown)
@@ -292,9 +350,12 @@ def main():
     irc_thread.start()
 
     try:
-        discord_bot_instance.run(DISCORD_TOKEN)
+        discord_bot_instance.run_with_retry(DISCORD_TOKEN)
     except Exception as e:
-        logging.error(f"Exception in Discord bot run loop: {str(e)}")
+        logging.error(f"Unhandled exception in main loop: {str(e)}")
+    finally:
+        irc_manager.disconnect_all_clients()
+        irc_thread.join()
 
 if __name__ == "__main__":
     main()
