@@ -64,6 +64,7 @@ To relay messages between Discord and IRC, you'll need a Discord bot token:
 1. Go to the [Discord Developer Portal](https://discord.com/developers/applications).
 2. Create a new application and then create a bot under the "Bot" section.
 3. Copy the bot token.
+4. Make sure to assign the bot to the appropriate server and give it the necessary permissions. These should include reading messages, sending messages, and managing webhooks in the channels you want the bot to operate in.
 
 ### 2. Setting Up Discord Webhooks
 
